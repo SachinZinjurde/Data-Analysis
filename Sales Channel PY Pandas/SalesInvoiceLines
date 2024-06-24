@@ -1,0 +1,90 @@
+SELECT 
+    substr(INVCDT, 5, 2)||'/'||substr(INVCDT, 7, 2)||'/'||substr(INVCDT, 1, 4) as "Invoice Date",
+    T01.SLACUN as "Acct Unit",
+    T01.LCTN as "Location",
+    T03.CSTMRC as "Customer Code",
+    T03.PRCLST as "Price List",
+    T01.ACCOUNT as "Account",
+    T01.SLSBAC as "Sub Account",
+    T01.INVPRF as "Invoice Prefix",
+    T01.INNMBR as "Number",
+    T02.INVCTY as "Invoice Type",
+    T01.INVPRF||DIGITS(T01.INNMBR) as "Reference",     
+    T01.ORDNBR as "Order#",
+    T04.DRQNBR as "Request#",
+    T04.ORDTKR as "Order Taker",
+    T02.CSTMR as "Customer#",
+    T09.SRCHNM as "Customer Name",
+    T09.CNTRY as "Customer Country",
+    T09.CNTRYC AS "Customer Country Code",
+    T04.SHTNM as "Ship to Name",
+    T04.SHTADD as "Ship to Addr1",
+    T04.SHPTAD as "Ship to Addr2",
+    T04.SHTCTY as "Ship to City",
+    T04.SHTSTT as "Ship To State",
+    T04.CNTRYC as "Ship to Country",
+    T04.BRNCD as "Branch Code",
+    T01.SLSMJC as "Sales Major Class",
+    T08.DMAJDSCRPT as "Major Class Desc",
+    T01.SLSMNC as "Sales Minor Class",
+    T07.INVMJC as "Inventory Major",
+    T07.INVMNC as "Inventory Minor",
+    T07.USFLD4 as "Item User Field 4",
+    T06.DITLPRMVND as "Prime Vendor",
+    T12.DVENVNDVNM as "Vendor Name",
+    T01.LNNBR as "Invoice Line#",
+    T01.ITEM as "Item#",
+    T01.DSCRPT as "Item Desc",
+    T01.QNTTY as "Qty",
+    T01.UNTCST as "Unit Cost",
+    T01.QNTTY * T01.UNTCST as "COSTS",         
+    T01.UNTPRC as "Unit Price",
+    T01.ENTRPR as "Entered Price",
+    T01.QNTTY * T01.ENTRPR as "SALES",         
+    T01.LNGRCR as "Currency",
+    T07.USFLN3 As "User Field N3",
+    T06.DITLUSFLD3 as "User Field 3",
+    T04.SHTZP as "Ship to Zip",
+    T04.AOZIP as "Admin Zip",
+    T05.CURRE00001 as "Current MLP",
+/*Spilt freight evenly on all lines since freight Is captured on header level.
+
+     T02.FRTCHR / C.TotalCount as "Evenly Distributed Freight Charge"
+FROM 
+
+    InvoiceLine1 T01
+    JOIN InvoiceHeader1 T02 ON T01.CMPNY = T02.CMPNY AND T01.INVPRF = T02.INVPRF AND T01.INNMBR = T02.INNMBR 
+    LEFT JOIN CustomerCode1 T03 ON T02.CSTMR = T03.CSTMR AND T01.CMPNY = T03.CMPNY
+    LEFT JOIN ORDERENTRYHEADER1 T04 ON T01.CMPNY = T04.CMPNY AND T01.ORDNBR = T04.ORDNBR AND T02.CSTMR = T04.CSTMR AND T01.SLACUN = T04.PRCSLV AND T01.LCTN = INVLOC AND T02.CSPNBR = T04.CSPNBR
+    LEFT JOIN CURRENTMLP T05 ON T01.ITEM = T05.DOEBITEM 
+    LEFT JOIN ITEMLOCATION1 T06 ON T01.CMPNY = T06.DITLCMPNY AND T01.LCTN = T06.DITLLCTN AND T01.ITEM = T06.DITLITEM
+    LEFT JOIN ITEMMASTER1 T07 ON T01.ITEM = T07.ITEM 
+    LEFT JOIN DBICMAJ1 T08 ON T07.ITMGRP = T08.DMAJITMGRP AND T07.SLSMJC = T08.DMAJMJRCLS
+    LEFT JOIN CUSTOMERMASTER1 T09 ON T02.CSTMR = T09.CSTMR
+    LEFT JOIN ORDERHEADER1 T10 ON T01.ORDNBR = T10.DCORORDNBR 
+    LEFT JOIN COMPANYMASTER T11 ON T06.DITLCMPNY = T11.DCPYCMPNY
+    LEFT JOIN VENDORMASTER1 T12 ON T11.DCPYVNDGRP = T12.DVENVNDGRP AND T06.DITLPRMVND = T12.DVENVENDOR
+    LEFT JOIN 
+
+    (SELECT A.CMPNY,A.INVPRF,A.INNMBR, count(A.FRTCHR) as TotalCount
+     FROM InvoiceHeader1 A join InvoiceLine1 B 
+     ON A.CMPNY = B.CMPNY 
+               AND A.INVPRF = B.INVPRF 
+               AND A.INNMBR = B.INNMBR
+               WHERE CMPNY = 1001 AND ACCOUNT BETWEEN 80000 AND 99999
+               AND     A.INVCDT > =YEAR(CURRENT DATE-365 DAYS)*10000+MONTH(CURRENT DATE-365 DAYS)*100+DAY(CURRENT DATE-365 DAYS)
+    AND A.INVCDT < =YEAR(CURRENT DATE)*10000+MONTH(CURRENT DATE)*100+DAY(CURRENT DATE)
+     GROUP BY A.CMPNY,A.INVPRF,A.INNMBR) C ON T02.INNMBR = C.INNMBR and T02.INVPRF = C.INVPRF AND T02.CMPNY=C.CMPNY
+
+WHERE 
+    CMPNY = 100 
+    AND COSTCENTER IN (1001, 2001,3001) 
+    AND (ACCOUNT BETWEEN 80000 AND 99999) 
+    AND STATUS = 9 
+    AND ITMGRP = 'SALE' 
+    AND DMAJCLSTYP = 'S'
+
+/* Get data for last 1 year */
+INVCDT > =YEAR(CURRENT DATE-365 DAYS)*10000+MONTH(CURRENT DATE-365 DAYS)*100+DAY(CURRENT DATE-365 DAYS)
+
+    AND INVCDT < =YEAR(CURRENT DATE)*10000+MONTH(CURRENT DATE)*100+DAY(CURRENT DATE)
